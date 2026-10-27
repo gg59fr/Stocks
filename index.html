@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Stocks</title>
+<meta name="theme-color" content="#2E5A4C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stocks">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#F2F3EF; --surface:#FFFFFF; --fg:#1B201C; --muted:#646B65; --line:#D8DBD3;
+  --accent:#2E5A4C; --accent-ink:#FFFFFF; --due:#B4501A; --due-bg:#F8E6DA; --ok:#4D7739; --ok-bg:#E3EDDB;
+  --buy:#8A5A00; --buy-bg:#F6EBCF;
+  --display:-apple-system-ui-serif,ui-rounded,-apple-system,system-ui,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#141815; --surface:#1D221E; --fg:#E7EAE4; --muted:#9AA29B; --line:#313831;
+  --accent:#7FB8A4; --accent-ink:#0F1512; --due:#F0935C; --due-bg:#3A2418; --ok:#9CC683; --ok-bg:#223020;
+  --buy:#E8C26A; --buy-bg:#352C14; color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:660px;margin:0 auto;padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(48px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+h1{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.01em;margin:0}
+.sub{color:var(--muted);margin:4px 0 0;font-size:14px}
+.banner{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;display:flex;flex-direction:column;gap:6px}
+.banner strong{font-size:15px}
+.banner.warn{border-color:var(--due);background:var(--due-bg);color:var(--fg)}
+.summary{display:flex;gap:8px;flex-wrap:wrap}
+.pill{font-weight:600;font-size:15px;padding:6px 12px;border-radius:999px;display:inline-flex;gap:6px;align-items:center;font-variant-numeric:tabular-nums}
+.pill.due{background:var(--due-bg);color:var(--due)}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.buy{background:var(--buy-bg);color:var(--buy)}
+.tabs{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.tabs button{flex:1;border:0;background:transparent;color:var(--fg);font:600 15px var(--body);padding:11px 6px;cursor:pointer}
+.tabs button+button{border-left:1px solid var(--line)}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:0 0 8px}
+h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0}
+.link{background:none;border:0;color:var(--accent);font:600 14px var(--body);cursor:pointer;padding:4px 0}
+.list{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.item{border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.row{display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap}
+.info{flex:1 1 200px;min-width:0;cursor:pointer}
+.name{font-weight:600}
+.hint{font-size:14px;color:var(--muted);margin-top:1px}
+.meta{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:2px 10px;margin-top:3px}
+.warn{color:var(--due);font-weight:500}
+.item.isdue{box-shadow:inset 3px 0 0 var(--due)}
+.item.isbuy{box-shadow:inset 3px 0 0 var(--buy)}
+.btns{display:flex;gap:6px;flex:none}
+.b{border:1.5px solid var(--accent);background:transparent;color:var(--accent);font:600 15px var(--body);padding:9px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
+.b.primary{background:var(--accent);color:var(--accent-ink)}
+.b.buy{border-color:var(--buy);color:var(--buy)}
+button:focus-visible,input:focus-visible,select:focus-visible,.info:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.edit{padding:2px 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.edit .note{grid-column:1/-1;font-size:14px;color:var(--due);margin:0}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+input,select{font:16px var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%;min-width:0;-webkit-appearance:none;appearance:none}
+input[type=date]{min-height:42px}
+.full{grid-column:1/-1}
+.actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:9px;padding:11px 15px;font:600 15px var(--body);cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--due);border:1px solid var(--due)}
+.empty{padding:16px 14px;color:var(--muted)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.box p{grid-column:1/-1;margin:0;font-size:14px;color:var(--muted)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);border-radius:10px;padding:11px 15px;display:flex;gap:14px;align-items:center;font-size:15px;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:20}
+.toast button{background:none;border:0;color:var(--bg);font:700 15px var(--body);text-decoration:underline;cursor:pointer;padding:0}
+.copybox{grid-column:1/-1;width:100%;min-height:120px;font:13px var(--mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px}
+@media (max-width:460px){
+  .btns{width:100%}
+  .btns .b{flex:1}
+  .edit,.box{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Stocks</h1>
+    <p class="sub">Sac d'évacuation et maison. <strong>OK</strong> si c'est complet, <strong>Manque</strong> s'il faut en racheter. Touchez un nom pour le modifier. Tout reste sur ce téléphone.</p>
+  </header>
+
+  <div class="banner" id="installBanner" hidden>
+    <strong>Installer l'app pour l'utiliser sans réseau</strong>
+    <span>Dans Safari, touchez le bouton Partager (carré avec une flèche), puis « Sur l'écran d'accueil ». Ouvrez ensuite l'app depuis son icône.</span>
+  </div>
+  <div class="banner warn" id="backupBanner" hidden>
+    <strong id="backupTitle">Pensez à sauvegarder</strong>
+    <span>Une copie de sauvegarde protège vos données si le téléphone est perdu ou réinitialisé. <button class="link" type="button" id="backupNow">Sauvegarder maintenant</button></span>
+  </div>
+
+  <div class="summary">
+    <span class="pill buy"><span id="nBuy">0</span> à racheter</span>
+    <span class="pill due"><span id="nDue">0</span> à contrôler</span>
+    <span class="pill ok"><span id="nOk">0</span> à jour</span>
+  </div>
+
+  <div class="tabs" role="group" aria-label="Filtrer">
+    <button type="button" data-f="all" aria-pressed="true">Tout</button>
+    <button type="button" data-f="sac" aria-pressed="false">Sac</button>
+    <button type="button" data-f="maison" aria-pressed="false">Maison</button>
+  </div>
+
+  <section id="buySec" hidden>
+    <div class="sechead"><h2>À racheter</h2><button class="link" id="copyBtn" type="button">Copier la liste</button></div>
+    <ul class="list" id="buyList"></ul>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>À contrôler</h2></div>
+    <ul class="list" id="dueList"></ul>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>À jour</h2></div>
+    <ul class="list" id="okList"></ul>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Ajouter un élément</h2></div>
+    <form class="box" id="addForm">
+      <label class="full">Nom<input id="a-nom" required placeholder="ex. Piles AA" autocomplete="off"></label>
+      <label class="full">Quoi vérifier<input id="a-cons" placeholder="ex. compter, tester, regarder la date" autocomplete="off"></label>
+      <label>Où<select id="a-lieu"><option value="sac">Sac</option><option value="maison">Maison</option></select></label>
+      <label>Contrôle<select id="a-freq"><option value="semaine">Chaque semaine</option><option value="mois" selected>Chaque mois</option><option value="trimestre">Tous les 3 mois</option></select></label>
+      <label>Quantité visée<input id="a-qte" placeholder="ex. 8 unités" autocomplete="off"></label>
+      <label>Péremption<input id="a-per" type="date"></label>
+      <div class="actions"><button class="btn" type="submit">Ajouter</button></div>
+    </form>
+  </section>
+
+  <section>
+    <div class="sechead"><h2>Sauvegarde</h2></div>
+    <div class="box">
+      <p id="backupInfo">Aucune sauvegarde pour l'instant.</p>
+      <div class="actions">
+        <button class="btn" type="button" id="exportBtn">Sauvegarder dans Fichiers</button>
+        <button class="btn ghost" type="button" id="importBtn">Restaurer une sauvegarde</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+      </div>
+      <textarea class="copybox" id="copyBox" readonly hidden aria-label="Texte à copier"></textarea>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden role="status"><span id="toastMsg"></span><button id="undoBtn" type="button" hidden>Annuler</button></div>
+
+<script>
+(function(){
+  const SEED = [{"id": "mai-chaleur", "nom": "Couvertures + vêtements chauds", "consigne": "Accessibles sans électricité", "lieu": "maison", "freq": "trimestre", "qte": "1 par pers.", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-chargeur", "nom": "Batterie externe + chargeur solaire", "consigne": "Recharger à 100 %", "lieu": "maison", "freq": "mois", "qte": "1", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-conserves", "nom": "Conserves", "consigne": "Compter, aucune boîte bombée ou rouillée, plus anciennes devant", "lieu": "maison", "freq": "mois", "qte": "20 boîtes", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-detecteurs", "nom": "Détecteurs de fumée", "consigne": "Appuyer sur le bouton test de chacun", "lieu": "maison", "freq": "mois", "qte": "", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-eau-sanitaire", "nom": "Eau non potable (toilettes, lavage)", "consigne": "Jerricans pleins, bouchons fermés", "lieu": "maison", "freq": "trimestre", "qte": "20 L", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-eau", "nom": "Eau potable", "consigne": "Compter les bouteilles, regarder les dates, faire tourner", "lieu": "maison", "freq": "mois", "qte": "9 L / pers.", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-especes", "nom": "Espèces", "consigne": "Montant prévu, petites coupures", "lieu": "maison", "freq": "trimestre", "qte": "", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-extincteur", "nom": "Extincteur", "consigne": "Aiguille dans le vert, goupille en place", "lieu": "maison", "freq": "trimestre", "qte": "1", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-feculents", "nom": "Pâtes, riz, légumineuses", "consigne": "Paquets fermés, pas de mites, plus anciens devant", "lieu": "maison", "freq": "mois", "qte": "5 kg", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-frais", "nom": "Rotation des réserves", "consigne": "Utiliser cette semaine ce qui est entamé ou bientôt périmé, puis le racheter", "lieu": "maison", "freq": "semaine", "qte": "", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-gaz", "nom": "Réchaud + cartouches gaz", "consigne": "Compter les cartouches, allumer le réchaud quelques secondes", "lieu": "maison", "freq": "mois", "qte": "4 cartouches", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-hygiene", "nom": "Hygiène (savon, PQ, sacs)", "consigne": "Savon, papier toilette, sacs poubelle, gel hydroalcoolique", "lieu": "maison", "freq": "mois", "qte": "1 mois", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-loisirs", "nom": "Livres / jeux sans écran", "consigne": "Rangés avec les réserves", "lieu": "maison", "freq": "trimestre", "qte": "", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-lumiere", "nom": "Lampes torches + bougies", "consigne": "Allumer chaque lampe, compter les bougies, briquet à côté", "lieu": "maison", "freq": "mois", "qte": "2 + 10", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-pharma", "nom": "Pharmacie familiale", "consigne": "Paracétamol, pansements, thermomètre : dates et quantités", "lieu": "maison", "freq": "mois", "qte": "", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-piles", "nom": "Piles AA / AAA", "consigne": "Compter, regarder la date", "lieu": "maison", "freq": "mois", "qte": "12 + 12", "peremption": "", "dernier": "", "manque": false}, {"id": "mai-radio", "nom": "Radio à manivelle", "consigne": "Tourner la manivelle, capter France Inter ou France Info", "lieu": "maison", "freq": "mois", "qte": "1", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-batterie", "nom": "Batterie externe chargée", "consigne": "Recharger à 100 %, câbles présents", "lieu": "sac", "freq": "semaine", "qte": "1", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-carte", "nom": "Carte papier + boussole", "consigne": "Carte de la région, points de rendez-vous notés", "lieu": "sac", "freq": "trimestre", "qte": "1 + 1", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-cles", "nom": "Double des clés", "consigne": "Présent, à jour si une serrure a changé", "lieu": "sac", "freq": "trimestre", "qte": "maison + voiture", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-couverture", "nom": "Couverture de survie", "consigne": "Emballage fermé, présente", "lieu": "sac", "freq": "trimestre", "qte": "2", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-docs", "nom": "Copies papiers + espèces", "consigne": "Copies ID, carte vitale, assurance, contacts papier ; espèces en petites coupures", "lieu": "sac", "freq": "mois", "qte": "pochette", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-eau", "nom": "Eau (bouteilles)", "consigne": "Bouteilles pleines et scellées, regarder la date", "lieu": "sac", "freq": "mois", "qte": "3 L", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-feu", "nom": "Briquet + allumettes étanches", "consigne": "Le briquet s'allume, allumettes au sec", "lieu": "sac", "freq": "mois", "qte": "1 + 1 boîte", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-filtre", "nom": "Filtre à eau + pastilles", "consigne": "Filtre sec et propre, date des pastilles", "lieu": "sac", "freq": "mois", "qte": "1 + 20", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-hygiene", "nom": "Kit hygiène", "consigne": "Brosse à dents, savon, lingettes, papier toilette", "lieu": "sac", "freq": "trimestre", "qte": "1", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-lampe", "nom": "Lampe frontale + piles", "consigne": "Allumer la lampe, piles de rechange présentes", "lieu": "sac", "freq": "mois", "qte": "1 + 4 AAA", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-masques", "nom": "Masques FFP2 + gants", "consigne": "Compter, regarder la date des masques", "lieu": "sac", "freq": "trimestre", "qte": "5 + 2 paires", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-medocs", "nom": "Médicaments personnels", "consigne": "Traitements en cours + ordonnance, regarder les dates", "lieu": "sac", "freq": "mois", "qte": "7 jours", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-outils", "nom": "Couteau multifonction + ruban adhésif", "consigne": "Présents, lame propre", "lieu": "sac", "freq": "trimestre", "qte": "1 + 1", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-poncho", "nom": "Poncho + sacs étanches", "consigne": "Pas troué, sacs présents", "lieu": "sac", "freq": "trimestre", "qte": "1 + 3", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-rations", "nom": "Rations / barres énergétiques", "consigne": "Compter, regarder la date, emballages intacts", "lieu": "sac", "freq": "mois", "qte": "3 jours", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-sifflet", "nom": "Sifflet", "consigne": "Accroché à la bretelle", "lieu": "sac", "freq": "trimestre", "qte": "1", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-test", "nom": "Test du sac porté", "consigne": "Marcher 30 min avec : poids, bretelles, rien qui manque", "lieu": "sac", "freq": "trimestre", "qte": "", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-trousse", "nom": "Trousse de secours", "consigne": "Pansements, désinfectant, compresses : rien d'entamé ni périmé", "lieu": "sac", "freq": "mois", "qte": "complète", "peremption": "", "dernier": "", "manque": false}, {"id": "sac-vetements", "nom": "Vêtements de saison", "consigne": "Adapter à la saison qui arrive : couche chaude, chaussettes, bonnet", "lieu": "sac", "freq": "trimestre", "qte": "1 tenue", "peremption": "", "dernier": "", "manque": false}];
+  const KEY = "stocks-v1", META = "stocks-meta-v1";
+  const DAY = 86400000, SOON = 30;
+  const PERIOD = {semaine:7, mois:30, trimestre:91};
+  const FREQ = {semaine:"hebdo", mois:"mensuel", trimestre:"tous les 3 mois"};
+  const LIEU = {sac:"Sac", maison:"Maison"};
+  let items = [], meta = {}, filter = "all", openId = null, openNote = "", armedDelete = null, undo = null, toastTimer = null;
+
+  const $ = id => document.getElementById(id);
+  const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+  const iso = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const parse = s => { if(!s) return null; const [y,m,d] = String(s).split("-").map(Number); return y ? new Date(y,m-1,d) : null; };
+  const fmt = d => d.toLocaleDateString("fr-FR",{day:"numeric",month:"short"});
+  const fmtLong = d => d.toLocaleDateString("fr-FR",{day:"numeric",month:"long",year:"numeric"});
+  const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const uid = () => "i"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+  function load(){
+    try{ const raw = localStorage.getItem(KEY); items = raw ? JSON.parse(raw) : SEED.slice(); }catch(e){ items = SEED.slice(); }
+    try{ meta = JSON.parse(localStorage.getItem(META)||"{}"); }catch(e){ meta = {}; }
+    filter = meta.filter || "all";
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(items)); return true; }
+    catch(e){ toast("Enregistrement impossible : stockage du téléphone plein ?"); return false; }
+  }
+  function saveMeta(){ try{ localStorage.setItem(META, JSON.stringify(meta)); }catch(e){} }
+
+  function toast(msg, undoable){
+    $("toastMsg").textContent = msg; $("undoBtn").hidden = !undoable; $("toast").hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(()=>{ $("toast").hidden = true; undo = null; }, undoable ? 6000 : 3000);
+  }
+
+  const nextDue = it => { const l = parse(it.dernier); return l ? new Date(l.getTime() + (PERIOD[it.freq]||30)*DAY) : today(); };
+  const expiry = it => { const p = parse(it.peremption); return p ? {date:p, days:Math.round((p - today())/DAY)} : null; };
+  const checkDue = it => nextDue(it) <= today();
+  const expSoon = it => { const e = expiry(it); return !!(e && e.days <= SOON); };
+  const state = it => it.manque ? "buy" : (checkDue(it) || expSoon(it)) ? "due" : "ok";
+
+  function rowHTML(it){
+    const st = state(it), e = expiry(it), x = it.id, open = openId===x;
+    const m = [LIEU[it.lieu]||esc(it.lieu), FREQ[it.freq]||"mensuel"];
+    if(it.qte) m.push("visé : "+esc(it.qte));
+    if(e) m.push(`<span${e.days<=SOON?' class="warn"':""}>${e.days<0?"périmé depuis":"périme le"} ${fmt(e.date)}</span>`);
+    if(!it.dernier) m.push(`<span class="warn">jamais contrôlé</span>`);
+    else if(checkDue(it)) m.push(`<span class="warn">contrôle dû</span>`);
+    else m.push(`prochain ${fmt(nextDue(it))}`);
+
+    let btns;
+    if(st==="buy") btns = `<button type="button" class="b primary" data-act="bought" data-id="${x}">Racheté</button>`;
+    else if(st==="due" && !checkDue(it)) btns = `<button type="button" class="b primary" data-act="redate" data-id="${x}">Changer la date</button><button type="button" class="b buy" data-act="missing" data-id="${x}">Manque</button>`;
+    else btns = `<button type="button" class="b ${st==="due"?"primary":""}" data-act="check" data-id="${x}">OK</button><button type="button" class="b buy" data-act="missing" data-id="${x}">Manque</button>`;
+
+    let edit = "";
+    if(open){
+      const f = it.freq||"mois";
+      edit = `<div class="edit">
+        ${openNote?`<p class="note">${esc(openNote)}</p>`:""}
+        <label class="full">Nom<input id="e-nom-${x}" value="${esc(it.nom)}"></label>
+        <label class="full">Quoi vérifier<input id="e-cons-${x}" value="${esc(it.consigne)}"></label>
+        <label>Où<select id="e-lieu-${x}"><option value="sac"${it.lieu==="sac"?" selected":""}>Sac</option><option value="maison"${it.lieu==="maison"?" selected":""}>Maison</option></select></label>
+        <label>Contrôle<select id="e-freq-${x}"><option value="semaine"${f==="semaine"?" selected":""}>Chaque semaine</option><option value="mois"${f==="mois"?" selected":""}>Chaque mois</option><option value="trimestre"${f==="trimestre"?" selected":""}>Tous les 3 mois</option></select></label>
+        <label>Quantité visée<input id="e-qte-${x}" value="${esc(it.qte)}"></label>
+        <label>Péremption<input id="e-per-${x}" type="date" value="${esc(it.peremption)}"></label>
+        <div class="actions">
+          <button type="button" class="btn" data-act="save" data-id="${x}">Enregistrer</button>
+          <button type="button" class="btn ghost" data-act="close" data-id="${x}">Fermer</button>
+          <button type="button" class="btn danger" data-act="del" data-id="${x}">${armedDelete===x?"Confirmer la suppression":"Supprimer"}</button>
+        </div></div>`;
+    }
+    return `<li class="item is${st}">
+      <div class="row">
+        <div class="info" data-act="toggle" data-id="${x}" role="button" tabindex="0" aria-expanded="${open}">
+          <div class="name">${esc(it.nom)}</div>
+          ${it.consigne?`<div class="hint">${esc(it.consigne)}</div>`:""}
+          <div class="meta">${m.join('<span aria-hidden="true">·</span>')}</div>
+        </div>
+        <div class="btns">${btns}</div>
+      </div>${edit}</li>`;
+  }
+
+  function render(){
+    document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.f===filter)));
+    const vis = items.filter(it => filter==="all" || it.lieu===filter)
+      .sort((a,b)=> (PERIOD[a.freq]||30)-(PERIOD[b.freq]||30) || nextDue(a)-nextDue(b) || String(a.nom).localeCompare(b.nom,"fr"));
+    const g = {buy:[],due:[],ok:[]}; vis.forEach(it=>g[state(it)].push(it));
+    $("nBuy").textContent = g.buy.length; $("nDue").textContent = g.due.length; $("nOk").textContent = g.ok.length;
+    $("buySec").hidden = !g.buy.length;
+    $("buyList").innerHTML = g.buy.map(rowHTML).join("");
+    $("dueList").innerHTML = g.due.length ? g.due.map(rowHTML).join("") : `<li class="empty">Tout est contrôlé. Rien à faire aujourd'hui.</li>`;
+    $("okList").innerHTML = g.ok.length ? g.ok.map(rowHTML).join("") : `<li class="empty">Les éléments arrivent ici après « OK ».</li>`;
+    renderBackup();
+  }
+
+  function renderBackup(){
+    const last = meta.lastBackup ? new Date(meta.lastBackup) : null;
+    $("backupInfo").textContent = last ? `Dernière sauvegarde : ${fmtLong(last)}.` : "Aucune sauvegarde pour l'instant.";
+    const old = !last || (Date.now() - last.getTime()) > 30*DAY;
+    const touched = items.some(i=>i.dernier);
+    $("backupBanner").hidden = !(old && touched);
+    $("backupTitle").textContent = last ? "Dernière sauvegarde il y a plus d'un mois" : "Pensez à sauvegarder";
+  }
+
+  function change(id, fields, msg, withUndo){
+    const it = items.find(i=>i.id===id); if(!it) return;
+    const prev = {}; Object.keys(fields).forEach(k=>prev[k]=it[k]);
+    Object.assign(it, fields);
+    if(save()){ undo = withUndo ? {id, prev} : null; toast(msg, withUndo); }
+    render();
+  }
+
+  function act(action, id){
+    const it = items.find(i=>i.id===id);
+    if(action==="toggle"){ openId = openId===id?null:id; openNote=""; armedDelete=null; render(); return; }
+    if(action==="close"){ openId=null; openNote=""; armedDelete=null; render(); return; }
+    if(action==="redate"){ openId=id; openNote="Remplacez l'article puis indiquez sa nouvelle date de péremption."; armedDelete=null; render(); const p=$("e-per-"+id); if(p) p.focus(); return; }
+    if(!it) return;
+    const t = iso(today());
+    if(action==="check") return change(id, {dernier:t, manque:false}, `« ${it.nom} » : OK`, true);
+    if(action==="missing") return change(id, {dernier:t, manque:true}, `« ${it.nom} » ajouté à la liste de courses`, true);
+    if(action==="bought"){
+      if(it.peremption){ openId=id; openNote="Racheté : indiquez la date de péremption du nouvel article."; }
+      return change(id, {dernier:t, manque:false}, `« ${it.nom} » racheté`, true);
+    }
+    if(action==="save"){
+      const v = k => $(`e-${k}-${id}`).value.trim();
+      if(!v("nom")){ toast("Le nom est obligatoire."); return; }
+      openId=null; openNote="";
+      return change(id, {nom:v("nom"), consigne:v("cons"), lieu:v("lieu"), freq:v("freq"), qte:v("qte"), peremption:v("per")}, "Modifications enregistrées", false);
+    }
+    if(action==="del"){
+      if(armedDelete!==id){ armedDelete=id; render(); return; }
+      const idx = items.indexOf(it); items.splice(idx,1); openId=null; armedDelete=null;
+      if(save()){ undo = {restore:it, idx}; toast(`« ${it.nom} » supprimé`, true); }
+      render();
+    }
+  }
+
+  document.addEventListener("click", ev=>{
+    const t = ev.target.closest("[data-act]"); if(t){ ev.preventDefault(); act(t.dataset.act, t.dataset.id); return; }
+    const f = ev.target.closest(".tabs button"); if(f){ filter=f.dataset.f; meta.filter=filter; saveMeta(); render(); }
+  });
+  document.addEventListener("keydown", ev=>{
+    if((ev.key==="Enter"||ev.key===" ") && ev.target.matches(".info[data-act]")){ ev.preventDefault(); act("toggle", ev.target.dataset.id); }
+  });
+
+  $("undoBtn").addEventListener("click", ()=>{
+    if(!undo) return; const u = undo; undo = null;
+    if(u.restore){ items.splice(u.idx, 0, u.restore); }
+    else { const it = items.find(i=>i.id===u.id); if(it) Object.assign(it, u.prev); }
+    save(); render(); toast("Annulé");
+  });
+
+  function showText(text, msg){ const b=$("copyBox"); b.value=text; b.hidden=false; b.focus(); b.select(); toast(msg); }
+
+  $("copyBtn").addEventListener("click", ()=>{
+    const list = items.filter(i=>i.manque && (filter==="all"||i.lieu===filter));
+    const text = "À racheter :\n" + list.map(i=>`- ${i.nom}${i.qte?` (${i.qte})`:""} [${LIEU[i.lieu]||i.lieu}]`).join("\n");
+    try{ navigator.clipboard.writeText(text).then(()=>toast("Liste copiée"), ()=>showText(text,"Sélectionnez le texte en bas de page et copiez-le.")); }
+    catch(e){ showText(text,"Sélectionnez le texte en bas de page et copiez-le."); }
+  });
+
+  $("addForm").addEventListener("submit", ev=>{
+    ev.preventDefault();
+    const nom = $("a-nom").value.trim(); if(!nom) return;
+    items.push({id:uid(), nom, consigne:$("a-cons").value.trim(), lieu:$("a-lieu").value, freq:$("a-freq").value, qte:$("a-qte").value.trim(), peremption:$("a-per").value, dernier:"", manque:false});
+    if(save()){ ["a-nom","a-cons","a-qte","a-per"].forEach(k=>$(k).value=""); toast(`« ${nom} » ajouté`); }
+    render();
+  });
+
+  async function exportBackup(){
+    const text = JSON.stringify({app:"stocks", version:1, date:new Date().toISOString(), items}, null, 1);
+    const name = `stocks-sauvegarde-${iso(new Date())}.json`;
+    const mark = ()=>{ meta.lastBackup = Date.now(); saveMeta(); renderBackup(); };
+    try{
+      const file = new File([text], name, {type:"application/json"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:name});
+        mark(); toast("Sauvegarde enregistrée"); return;
+      }
+    }catch(e){ if(e && e.name==="AbortError") return; }
+    try{
+      const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text],{type:"application/json"})); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); mark(); toast("Sauvegarde téléchargée");
+    }catch(e){ showText(text, "Copiez ce texte dans une note pour le garder."); mark(); }
+  }
+  $("exportBtn").addEventListener("click", exportBackup);
+  $("backupNow").addEventListener("click", exportBackup);
+
+  $("importBtn").addEventListener("click", ()=>$("importFile").click());
+  $("importFile").addEventListener("change", ev=>{
+    const f = ev.target.files && ev.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{
+      try{
+        const d = JSON.parse(r.result); const list = Array.isArray(d) ? d : d.items;
+        if(!Array.isArray(list) || !list.every(i=>i && i.nom)) throw 0;
+        const before = items; items = list.map(i=>({id:i.id||uid(), nom:String(i.nom), consigne:i.consigne||"", lieu:i.lieu==="maison"?"maison":"sac", freq:PERIOD[i.freq]?i.freq:"mois", qte:i.qte||"", peremption:i.peremption||"", dernier:i.dernier||"", manque:!!i.manque}));
+        if(save()){ undo = null; toast(`${items.length} éléments restaurés`); } else items = before;
+        render();
+      }catch(e){ toast("Ce fichier n'est pas une sauvegarde de cette app."); }
+      ev.target.value = "";
+    };
+    r.readAsText(f);
+  });
+
+  const standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
+  $("installBanner").hidden = standalone;
+
+  load(); render();
+  try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
+  if("serviceWorker" in navigator && location.protocol !== "file:"){
+    window.addEventListener("load", ()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+  }
+  // Re-evaluate due items when the app is reopened on another day
+  document.addEventListener("visibilitychange", ()=>{ if(!document.hidden){ load(); render(); } });
+})();
+</script>
+</body>
+</html>
